@@ -5,6 +5,7 @@ import (
 )
 
 func TestServer_Run(t *testing.T) {
-	fakeServer := NewServer()
+	fakeServer := NewServer(":8081")
 	fakeServer.Run()
+
 }
