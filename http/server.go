@@ -30,7 +30,7 @@ func NewServer(addr string) *SimpleServer{
 
 func (s *SimpleServer) Run() {
 	// use default mutex
-	http.HandleFunc("/api", HelloServer)
+	http.HandleFunc("/health_z", HelloServer)
 	http.HandleFunc("/shutdown",s.HandleShutdown)
 
 	go func() {
@@ -46,8 +46,7 @@ func (s *SimpleServer) Run() {
 }
 
 func HelloServer(w http.ResponseWriter, req *http.Request) {
-	log.Printf("Request: %+v",req)
-	io.WriteString(w, "hello, world!\n")
+	io.WriteString(w, "ok")
 }
 
 func (s *SimpleServer)HandleShutdown(w http.ResponseWriter, req *http.Request){
