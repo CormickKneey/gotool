@@ -303,7 +303,7 @@ func NewBalancerRoundTripper(endpoints ...string) transport.WrapperFunc {
 		bl, err := NewBalancer(
 			AddEndpoints(endpoints...),
 			SetRoundTripper(rt),
-			SetHealthChecker(NewSimpleHealthCheck("GET", "/healthz", "ok")),
+			SetHealthChecker(NewSimpleHealthCheck("GET", "/health_z", "ok")),
 		)
 
 		if err != nil {
