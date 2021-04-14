@@ -13,10 +13,10 @@ type SimpleServer struct {
 	addition interface{}
 
 	shutdownCh chan struct{}
-	mux *http.ServeMux
+	mux        *http.ServeMux
 }
 
-func NewServer(addr string) *SimpleServer{
+func NewServer(addr string) *SimpleServer {
 	mux := http.NewServeMux()
 	return &SimpleServer{
 		Server: http.Server{
@@ -29,19 +29,18 @@ func NewServer(addr string) *SimpleServer{
 	}
 }
 
-
 func (s *SimpleServer) Run() {
 	// use default mutex ,  noop!
 
 	s.mux.HandleFunc("/health_z", HelloServer)
-	s.mux.HandleFunc("/shutdown",s.HandleShutdown)
-	s.mux.HandleFunc("/name",s.HandleName)
+	s.mux.HandleFunc("/shutdown", s.HandleShutdown)
+	s.mux.HandleFunc("/name", s.HandleName)
 
 	go func() {
-		log.Println("Started server on ",s.Addr)
+		log.Println("Started server on ", s.Addr)
 		err := s.Server.ListenAndServe()
 		if err != nil {
-			log.Println("start server error ",err)
+			log.Println("start server error ", err)
 			return
 		}
 	}()
@@ -54,20 +53,19 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "ok")
 }
 
-func (s *SimpleServer)HandleShutdown(w http.ResponseWriter, req *http.Request){
+func (s *SimpleServer) HandleShutdown(w http.ResponseWriter, req *http.Request) {
 	s.shutdownCh <- struct{}{}
 }
 
-func (s *SimpleServer)HandleName(w http.ResponseWriter, req *http.Request){
-	log.Println("[request] ",req)
-	io.WriteString(w, "Here is " + s.Addr)
+func (s *SimpleServer) HandleName(w http.ResponseWriter, req *http.Request) {
+	log.Printf("[request]  %v  ==> [response] %v \n", req.URL,s.Addr)
+	io.WriteString(w, "Here is "+s.Addr)
 }
 
-func (s *SimpleServer)ShutDown(){
+func (s *SimpleServer) ShutDown() {
 	err := s.Server.Shutdown(context.Background())
 	if err != nil {
-		log.Println("shut down server error ",err)
+		log.Println("shut down server error ", err)
 		return
 	}
 }
-

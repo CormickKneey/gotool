@@ -13,10 +13,10 @@ import (
 	"k8s.io/client-go/transport"
 )
 
-// Balancer is a balancer for apiservers 
+// Balancer is a balancer for ApiServer
 type Balancer struct {
-	endpoints []*Endpoint
-	healthEndpoints []*Endpoint
+	endpoints         []*Endpoint
+	healthEndpoints   []*Endpoint
 	unhealthEndpoints []*Endpoint
 
 	rl sync.Locker
@@ -40,28 +40,12 @@ func (br *Balancer) RoundTrip(req *http.Request) (*http.Response, error) {
 		return nil, errors.New("internal error no next round trip")
 	}
 
-	// so if we need to resend the request, we must copy the request
-
-	// var req2 *http.Request
-	
-	// req2 := CloneRequest(req)
-
-	// var data bytes.Buffer
-
-	// data.ReadFrom(req.Body)
-	// req.Body = ioutil.NopCloser(&data)
-	// req2.Body = ioutil.NopCloser(bytes.NewReader(data.Bytes()))
-
-	// ok,let send the req with the client
-
-	// let's choose a endpoint health to send the request
 	ep, err := br.nextEndpoint()
 	if err != nil {
-		// TODO: or use the default roundtripper?
 		return nil, err
 	}
 
-	log.Println("balancer modfiy", req.URL.Host, "=>", ep.url.Host, ":", req.Method, req.URL.String())
+	log.Println("balancer modify", req.URL.Host, "=>", ep.url.Host, ":", req.Method, req.URL.String())
 
 	ep.Apply(req)
 
@@ -70,7 +54,7 @@ func (br *Balancer) RoundTrip(req *http.Request) (*http.Response, error) {
 	// should we check ???
 
 	if err != nil {
-		// mark unhealth
+		// mark unhealthy
 		log.Println("while round tripper the request, we get error:", err)
 		br.markHealth(ep, false)
 	}
@@ -91,20 +75,19 @@ func (br *Balancer) nextEndpoint() (*Endpoint, error) {
 	return br.healthEndpoints[rand.Intn(len(br.healthEndpoints))], nil
 }
 
-// markHealth 
+// markHealth
 func (br *Balancer) markHealth(ep *Endpoint, ok bool) {
 	br.rl.Lock()
 	defer func() {
 		br.rl.Unlock()
-		log.Println("mark:", unsafe.Pointer(ep), "healthy:", ok, "Healths:", br.healthEndpoints, "Unhealths:", br.unhealthEndpoints)
+		log.Println("mark:", unsafe.Pointer(ep), "healthy:", ok, "Healths:", br.healthEndpoints, "Unhealthy:", br.unhealthEndpoints)
 	}()
 
-	// IMPROVE: make the slcie swapper
+	// IMPROVE: make the slice swapper
 
-	// add unhealthIndexs and healthIndexs
+	// add unhealthyIndex and healthIndex
 	// check if we exits
 
-	// add to health, and remove from unhealth
 	if ok {
 
 		// add health
@@ -120,11 +103,11 @@ func (br *Balancer) markHealth(ep *Endpoint, ok bool) {
 			br.healthEndpoints = append(br.healthEndpoints, ep)
 		}
 
-		// remove unhealth
+		// remove unhealthy
 		for i, ex := range br.unhealthEndpoints {
 			if ex == ep {
 				// ok let's remove
-				max := len(br.unhealthEndpoints)-1
+				max := len(br.unhealthEndpoints) - 1
 				if i == max {
 					br.unhealthEndpoints = br.unhealthEndpoints[0:i]
 				} else if i == 0 {
@@ -136,7 +119,7 @@ func (br *Balancer) markHealth(ep *Endpoint, ok bool) {
 			}
 		}
 	} else {
-		// add to unhealth
+		// add to unhealthy
 		has := false
 		for _, ex := range br.unhealthEndpoints {
 			if ex == ep {
@@ -154,7 +137,7 @@ func (br *Balancer) markHealth(ep *Endpoint, ok bool) {
 			if ex == ep {
 				// ok let's remove
 				max := len(br.healthEndpoints)
-				if i == max - 1 {
+				if i == max-1 {
 					br.healthEndpoints = br.healthEndpoints[0:i]
 				} else if i == 0 {
 					br.healthEndpoints = br.healthEndpoints[1:max]
@@ -167,7 +150,7 @@ func (br *Balancer) markHealth(ep *Endpoint, ok bool) {
 	}
 }
 
-// recovery the unhealth to the normal
+// recovery the unhealthy one to the normal
 func (br *Balancer) recovery() {
 	// check un health list
 
@@ -212,10 +195,10 @@ func (br *Balancer) recoveryLoop() {
 
 	for {
 		select {
-		case <- tk.C:
+		case <-tk.C:
 			// let's do recovery
 			br.recovery()
-		case <- br.quitCh:
+		case <-br.quitCh:
 			log.Println("received quit signal ...")
 			return
 		}
@@ -226,7 +209,7 @@ func (br *Balancer) recoveryLoop() {
 func NewBalancer(opts ...Option) (*Balancer, error) {
 	br := &Balancer{
 		heartbeat: time.Second * 5,
-		rl: &sync.Mutex{},
+		rl:        &sync.Mutex{},
 	}
 
 	for _, o := range opts {
@@ -248,7 +231,7 @@ func NewBalancer(opts ...Option) (*Balancer, error) {
 	return br, nil
 }
 
-// Option ... 
+// Option ...
 type Option func(*Balancer)
 
 // AddEndpoints ...
@@ -284,7 +267,7 @@ var balancerRegistry = map[string]*Balancer{}
 
 // NewBalancerRoundTripper ...
 func NewBalancerRoundTripper(endpoints ...string) transport.WrapperFunc {
-	return func (rt http.RoundTripper) http.RoundTripper {
+	return func(rt http.RoundTripper) http.RoundTripper {
 		if len(endpoints) == 0 {
 			log.Println("without load balancer")
 			return rt

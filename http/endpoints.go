@@ -40,7 +40,7 @@ type HealthChecker func(ep *Endpoint, req *http.Request, resp *http.Response) bo
 // NewSimpleHealthCheck ... TODO: how to add timeout
 func NewSimpleHealthCheck(method string, path string, content string) HealthChecker {
 	return func(ep *Endpoint, req *http.Request, resp *http.Response) bool {
-		
+
 		if resp == nil {
 			// modify the req
 			req.URL.Path = path
@@ -52,7 +52,7 @@ func NewSimpleHealthCheck(method string, path string, content string) HealthChec
 
 		defer resp.Body.Close()
 
-		// must check the reult
+		// must check the result
 		if content != "" {
 			data, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
